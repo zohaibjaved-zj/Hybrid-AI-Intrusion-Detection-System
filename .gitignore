@@ -1,0 +1,22 @@
+# Python virtual environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Environment/secrets
+.env
+
+# Large datasets
+*.csv
+*.pcap
+*.pcapng
+
+# Trained models
+models/

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid AI Intrusion Detection System</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d0d1a;
+            --card: #1a1a2e;
+            --accent: #00ff9d;
+            --known: #ff3b5c;
+            --zeroday: #ff9d00;
+            --text: #e0e0ff;
+            --text-muted: #a0a0cc;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: var(--text);
+            font-family: 'Roboto Mono', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            animation: glow 3s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px var(--accent); }
+            to { text-shadow: 0 0 30px var(--accent), 0 0 40px var(--accent); }
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            margin: 0;
+            color: var(--accent);
+            letter-spacing: 4px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            letter-spacing: 2px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 20px 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.2);
+            border: 1px solid var(--accent);
+            min-width: 200px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .known { color: var(--known); }
+        .zeroday { color: var(--zeroday); }
+        .total { color: var(--accent); }
+
+        .chart-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.3);
+            border: 1px solid var(--accent);
+        }
+
+        h2 {
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent);
+            margin: 40px 0 20px;
+            font-size: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+        }
+
+        th {
+            background: linear-gradient(90deg, var(--known), var(--zeroday));
+            color: white;
+            padding: 15px;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            transition: background 0.3s;
+        }
+
+        tr.new-alert {
+            animation: slideIn 0.6s ease-out, pulse 1s infinite alternate;
+            background: rgba(255, 59, 92, 0.15) !important;
+        }
+
+        .known-attack { color: var(--known); font-weight: bold; }
+        .zeroday-attack { color: var(--zeroday); font-weight: bold; }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 10px var(--known); }
+            to { box-shadow: 0 0 25px var(--known); }
+        }
+
+        tr:hover {
+            background: #16213e;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚨 Hybrid AI Intrusion Detection System</h1>
+            <p class="subtitle">Real-Time Threat Monitoring • Known + Zero-Day Detection</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div>Total Alerts</div>
+                <div class="stat-value total" id="total">0</div>
+            </div>
+            <div class="stat-card">
+                <div>Known Attacks</div>
+                <div class="stat-value known" id="known">{{ totals.known }}</div>
+            </div>
+            <div class="stat-card">
+                <div>Zero-Day Anomalies</div>
+                <div class="stat-value zeroday" id="zeroday">{{ totals.zeroday }}</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="attackChart"></canvas>
+        </div>
+
+        <h2>Recent Alerts</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Source IP</th>
+                    <th>Time</th>
+                    <th>Location</th>
+                    <th>Attack Type</th>
+                    <th>Protocol</th>
+                </tr>
+            </thead>
+            <tbody id="alerts-table">
+                {% for alert in alerts %}
+                <tr class="{% if alert.type == 'Known Attack' %}known-attack{% else %}zeroday-attack{% endif %}">
+                    <td>{{ alert.ip }}</td>
+                    <td>{{ alert.timestamp }}</td>
+                    <td>{{ alert.location }}</td>
+                    <td><strong>{{ alert.type }}</strong></td>
+                    <td>{{ alert.protocol }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <footer>
+            Powered by Random Forest + Isolation Forest • Live Packet Capture with Scapy
+        </footer>
+    </div>
+
+    <script>
+        const socket = io();
+        const ctx = document.getElementById('attackChart').getContext('2d');
+        
+        const chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Known Attacks', 'Zero-Day Anomalies'],
+                datasets: [{
+                    data: [{{ totals.known }}, {{ totals.zeroday }}],
+                    backgroundColor: ['#ff3b5c', '#ff9d00'],
+                    borderColor: '#00ff9d',
+                    borderWidth: 3,
+                    hoverBorderWidth: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#e0e0ff', font: { size: 14 } } },
+                    tooltip: { backgroundColor: '#1a1a2e' }
+                },
+                cutout: '70%',
+                animation: { animateRotate: true }
+            }
+        });
+
+        let totalAlerts = {{ totals.known + totals.zeroday }};
+
+        socket.on('new_alert', function(alert) {
+            const table = document.getElementById('alerts-table');
+            const row = table.insertRow(0);
+            row.className = 'new-alert ' + (alert.type === 'Known Attack' ? 'known-attack' : 'zeroday-attack');
+            
+            row.innerHTML = `
+                <td>${alert.ip}</td>
+                <td>${alert.timestamp}</td>
+                <td>${alert.location}</td>
+                <td><strong>${alert.type}</strong></td>
+                <td>${alert.protocol}</td>
+            `;
+
+            // Update chart
+            if (alert.type === 'Known Attack') {
+                chart.data.datasets[0].data[0]++;
+            } else {
+                chart.data.datasets[0].data[1]++;
+            }
+            chart.update('active');
+
+            // Update counters
+            totalAlerts++;
+            document.getElementById('total').textContent = totalAlerts;
+            document.getElementById('known').textContent = chart.data.datasets[0].data[0];
+            document.getElementById('zeroday').textContent = chart.data.datasets[0].data[1];
+
+            // Remove animation class after 2s
+            setTimeout(() => row.classList.remove('new-alert'), 2000);
+        });
+    </script>
+</body>
+</html>
