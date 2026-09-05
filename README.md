@@ -270,8 +270,9 @@ This project is licensed under the **MIT License** — feel free to use, modify,
 If you find this project useful, please consider giving the repository a ⭐ star!
 </div>
 
-## 👨‍💻 Author
+## 👤 Author
 
-[**Muhammad Zohaib**](https://github.com/zohaibjaved-zj)
+**Muhammad Zohaib**
 
-</div>
+[![GitHub](https://img.shields.io/badge/GitHub-zohaibjaved--zj-171515?style=flat-square&logo=github&logoColor=white)](https://github.com/zohaibjaved-zj)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Muhammad_Zohaib-1478a8?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/muhammad-zohaib-46436a282)
